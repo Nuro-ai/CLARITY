@@ -1,0 +1,11 @@
+SELECT 
+bqDataset.name as bqDatasetPath,
+bqDataset.resource.data.datasetReference.datasetId as bqDatasetName,
+bqDataset.resource.data.datasetReference.projectId as projectName,
+bqDataset.resource.data.description.value as bqDatasetDescription,
+(SELECT COUNT(*) FROM `$project.$dataset.view_bqtable` bqTable WHERE bqTable.bqDatasetName = bqDataset.resource.data.datasetReference.datasetId ) as bqTableCount,
+bqDataset.resource.location as bqDatasetLocation,
+bqDataset.updateTime as bqDatasetUpdateTime
+FROM `$project.$dataset.resource_bigquery_googleapis_com_Dataset` bqDataset
+WHERE DATE(readTime) = DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY)
+-- authors: rheins@nuro.ai

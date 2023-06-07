@@ -1,0 +1,54 @@
+-- We need to UNION ALL the contrainerregistry (deprecated) and artifactregistry tables to get all_containers.
+-- containerregistry is deprecated in favor of artifactregistry
+WITH all_containers as (
+-- BEGIN CONTAINER REGISTRY
+SELECT 
+  SPLIT(resource.data.name, '/')[SAFE_OFFSET(0)] as hostname,
+  SPLIT(resource.data.name, '/')[SAFE_OFFSET(1)] as project,
+  SPLIT(SPLIT(resource.data.name, '@')[SAFE_OFFSET(0)], '/')[SAFE_OFFSET(2)] as repository,
+  ARRAY_REVERSE(SPLIT(SPLIT(REPLACE(resource.data.name, CONCAT(SPLIT(resource.data.name, '/')[SAFE_OFFSET(0)], '/', SPLIT(resource.data.name, '/')[SAFE_OFFSET(1)], '/', SPLIT(resource.data.name, '/')[SAFE_OFFSET(2)], '/'), ''), '@')[SAFE_OFFSET(0)], '/'))[SAFE_OFFSET(0)] as container_name,
+-- full_resource_name not supported for containerregistry
+  NULL as full_resource_name,
+  resource.data.name as uri,
+ARRAY_LENGTH(SPLIT(resource.data.name, '/')) as num_parts,
+  (
+    SELECT STRING_AGG(part, '/' ORDER BY index) 
+    FROM UNNEST(SPLIT(SPLIT(resource.data.name, '@')[OFFSET(0)], '/')) part WITH OFFSET index 
+    WHERE index BETWEEN 2 AND ARRAY_LENGTH(SPLIT(resource.data.name, '/'))
+  ) container_path,
+  SPLIT(name, '@')[SAFE_OFFSET(1)] as sha,
+  resource.data.timeUploaded as upload_time,
+  resource.data.tags as tags,
+FROM `$project.$dataset.resource_containerregistry_googleapis_com_Image` 
+WHERE 
+DATE(readTime) = DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY)
+-- END CONTAINER REGISTRY
+    
+-- We destinguish between containerregistry and artifactregistry based on full_resource_path (=NULL for containerregistry)
+
+-- BEGIN ARTIFACT REGISTRY
+UNION ALL
+SELECT 
+  SPLIT(resource.data.uri, '/')[SAFE_OFFSET(0)] as hostname,
+  SPLIT(resource.data.name, '/')[SAFE_OFFSET(1)] as project,
+  SPLIT(SPLIT(resource.data.name, '@')[SAFE_OFFSET(0)], '/')[SAFE_OFFSET(5)] as repository,
+  ARRAY_REVERSE(SPLIT(SPLIT(REPLACE(resource.data.name, CONCAT(SPLIT(resource.data.name, '/')[SAFE_OFFSET(0)], '/', SPLIT(resource.data.name, '/')[SAFE_OFFSET(1)], '/', SPLIT(resource.data.name, '/')[SAFE_OFFSET(2)], '/'), ''), '@')[SAFE_OFFSET(0)], '/'))[SAFE_OFFSET(0)] as container_name,
+  CONCAT("//artifactregistry.googleapis.com/", resource.data.uri) as full_resource_name,
+  resource.data.name as uri,
+ARRAY_LENGTH(SPLIT(resource.data.name, '/')) as num_parts,
+  (
+    SELECT STRING_AGG(part, '/' ORDER BY index) 
+    FROM UNNEST(SPLIT(SPLIT(resource.data.name, '@')[OFFSET(0)], '/')) part WITH OFFSET index 
+    WHERE index BETWEEN 2 AND ARRAY_LENGTH(SPLIT(resource.data.name, '/'))
+  ) container_path,
+  SPLIT(name, '@')[SAFE_OFFSET(1)] as sha,
+  resource.data.uploadTime as upload_time,
+  resource.data.tags as tags,
+FROM `$dataset.resource_artifactregistry_googleapis_com_DockerImage` artifact_containers
+WHERE
+DATE(readTime) = DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY)
+)
+-- SELECT DISTINCT(hostname) FROM all_containers
+SELECT * FROM all_containers
+
+-- authors: kbroughton@nuro.ai

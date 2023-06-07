@@ -1,0 +1,74 @@
+-- selected fields for asset_type=apps.k8s.io/ReplicaSet
+-- per-asset-export does not yet support most k8s resources including apps.k8s.io/ReplicaSet, so we extract it from "resource" table.
+
+SELECT 
+JSON_EXTRACT(managedFields, "$.apiVersion") as managedFields_apiVersion,
+JSON_EXTRACT(managedFields, "$.fieldsType") as managedFields_fieldsType,
+JSON_EXTRACT(managedFields, "$.manager") as managedFields_manager,
+JSON_EXTRACT(managedFields, "$.operation") as managedFields_operation,
+JSON_EXTRACT(managedFields, "$.time") as managedFields_time,
+JSON_EXTRACT(resource.data, "$.metadata.namespace") as namespace,
+JSON_EXTRACT(resource.data, "$.metadata.labels") labels,
+JSON_EXTRACT(resource.data, "$.metadata.clusterName") as metadata_cluster_name,
+JSON_EXTRACT(resource.data, "$.metadata.creationTimestamp") as metadata_creation_timestamp,
+JSON_EXTRACT(resource.data, "$.metadata.annotations") as metadata_annotations,
+
+JSON_EXTRACT(resource.data, "$.spec.template.spec.dnsPolicy") as dns_policy,
+JSON_EXTRACT(resource.data, "$.spec.template.spec.hostIPC") as hostIPC,
+JSON_EXTRACT(resource.data, "$.spec.template.spec.hostNetwork") as hostNetwork,
+JSON_EXTRACT(resource.data, "$.spec.template.spec.hostPID") as hostPID,
+JSON_EXTRACT(resource.data, "$.spec.template.spec.hostname") as hostname,
+JSON_EXTRACT(resource.data, "$.spec.template.spec.nodeName") as nodename,
+JSON_EXTRACT(resource.data, "$.spec.template.spec.serviceAccount") as serviceAccount,
+JSON_EXTRACT(resource.data, "$.spec.template.spec.serviceAccountName") as serviceAccountName,
+
+JSON_EXTRACT(container_ports, "$.containerPort") as containerPort,
+JSON_EXTRACT(container_ports, "$.hostIP") as containerPort_hostIP,
+JSON_EXTRACT(container_ports, "$.hostPort") as containerPort_hostPort,
+JSON_EXTRACT(container_ports, "$.name") as containerPort_name,
+JSON_EXTRACT(container_ports, "$.protocol") as containerPort_protocol,
+
+JSON_EXTRACT(containers, "$.name") as containers_name,
+JSON_EXTRACT(containers, "$.image") as containers_image,
+JSON_EXTRACT(containers, "$.livenessProbe") as containers_livenessProbe,
+JSON_EXTRACT(containers, "$.command") as containers_command,
+JSON_EXTRACT(containers, "$.args") as containers_args,
+
+JSON_EXTRACT(ownerReferences, "$.apiVersion") as ownerReferences_apiVersion,
+JSON_EXTRACT(ownerReferences, "$.blockOwnerDeletion") as ownerReferences_blockOwnerDeletion,
+JSON_EXTRACT(ownerReferences, "$.controller") as ownerReferences_controller,
+JSON_EXTRACT(ownerReferences, "$.name") as ownerReferences_name,
+JSON_EXTRACT(ownerReferences, "$.kind") as ownerReferences_kind,
+
+JSON_EXTRACT(volumes, "$.name") as volumes_name,
+JSON_EXTRACT(volumes, "$.volumeSource") as volumes_volumeSource,
+JSON_EXTRACT(volumes, "$.volumeSource.projected.sources") as volumes_projected_sources,
+
+JSON_EXTRACT(container_volumeMounts, "$.mountPath") as volumeMounts_mountPath,
+JSON_EXTRACT(container_volumeMounts, "$.name") as volumeMounts_name,
+JSON_EXTRACT(container_volumeMounts, "$.readOnly") as volumeMounts_readOnly,
+JSON_EXTRACT(container_volumeMounts, "$.subPath") as volumeMounts_subPath,
+JSON_EXTRACT(container_volumeMounts, "$.subPathExpr") as volumeMounts_subPathExpr,
+
+JSON_EXTRACT(tolerations, "$.effect") as effect,
+JSON_EXTRACT(tolerations, "$.type") as type,
+JSON_EXTRACT(tolerations, "$.operator") as operator,
+JSON_EXTRACT(tolerations, "$.value") as value,
+
+readTime,
+
+FROM 
+`$project.$dataset.resource`, 
+UNNEST(JSON_EXTRACT_ARRAY(resource.data, "$.metadata.managedFields")) as managedFields,
+UNNEST(JSON_EXTRACT_ARRAY(resource.data, "$.metadata.ownerReferences")) as ownerReferences,
+UNNEST(JSON_EXTRACT_ARRAY(resource.data, "$.spec.template.spec.containers")) as containers,
+UNNEST(JSON_EXTRACT_ARRAY(containers, "$.ports")) as container_ports,
+UNNEST(JSON_EXTRACT_ARRAY(containers, "$.volumeMounts")) as container_volumeMounts,
+UNNEST(JSON_EXTRACT_ARRAY(resource.data, "$.spec.template.spec.volumes")) as volumes,
+UNNEST(JSON_EXTRACT_ARRAY(resource.data, "$.spec.template.spec.tolerations")) as tolerations
+
+WHERE DATE(readTime) = DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY)
+AND asset_type = "apps.k8s.io/ReplicaSet"
+LIMIT 100
+
+-- author: jezhang@nuro.ai

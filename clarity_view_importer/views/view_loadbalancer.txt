@@ -1,0 +1,59 @@
+SELECT
+
+UrlMapHostRules.hosts as urlMapHost,
+UrlMapPathMatchersRules.paths as urlRulePath,
+GlobalForwardingRule.resource.data.IPAddress AS fwdruleIP,
+GlobalForwardingRule.resource.data.portRange AS fwdrulePortRange,
+BackendService.resource.data.protocol AS backendServiceProtocol,
+BackendService.resource.data.loadBalancingScheme AS backendServiceScheme,
+
+UrlMap.name AS urlMapPath,
+UrlMap.resource.data.name as urlMapName, 
+UrlMap.resource.data.selfLink as urlMapSelfLink,
+UrlMap.resource.data.description as urlMapDescription,
+UrlMapPathMatchersRules.service as urlMapBackendService,
+
+BackendService.name AS backendServicePath, 
+BackendService.resource.data.name AS backendServiceName, 
+BackendService.resource.data.selfLink AS backendServiceSelfLink,
+BackendService.resource.data.port AS backendServicePort,
+BackendService.resource.data.logConfig.enable as backendLogging,
+
+Backend.group AS backendGroup,
+Backend.description AS backendDescription,
+
+InstanceGroup.name as instanceGroupPath, 
+InstanceGroup.resource.data.name AS instanceGroupName, 
+InstanceGroup.resource.data.description as instanceGroupDescription, 
+InstanceGroup.resource.data.network AS instanceGroupNetwork, 
+InstanceGroup.resource.data.selfLink AS instanceGroupSelfLink, 
+InstanceGroup.resource.data.subnetwork AS instanceGroupSubnet,
+
+TargetHttpsProxy.name AS targetProxyPath,
+TargetHttpsProxy.resource.data.name AS targetProxyName,
+TargetHttpsProxy.resource.data.selfLink AS targetProxySelfLink,
+TargetHttpsProxy.resource.data.urlMap AS targetProxyURLMap,
+TargetHttpsProxy.resource.data.sslCertificates AS targetProxySSLCertificates,
+
+project.projectName,
+GlobalForwardingRule.name,
+GlobalForwardingRule.resource.data.creationTimestamp AS fwdruleCreation,
+GlobalForwardingRule.resource.data.description AS fwdruleDescription,
+GlobalForwardingRule.resource.data.IPProtocol AS fwdruleProtocol,
+GlobalForwardingRule.resource.data.target AS fwdruleTarget,
+GlobalForwardingRule.resource.data.selfLink AS fwdruleSelfLink,
+GlobalForwardingRule.resource.data.loadBalancingScheme AS fwdruleScheme,
+GlobalForwardingRule.resource.data.backendService AS fwdruleBackendService,
+
+FROM `$project.$dataset.resource_compute_googleapis_com_GlobalForwardingRule` GlobalForwardingRule
+JOIN `$project.$dataset.view_project` project ON project.projectParent = GlobalForwardingRule.resource.parent
+JOIN `$project.$dataset.resource_compute_googleapis_com_TargetHttpsProxy` TargetHttpsProxy ON (GlobalForwardingRule.resource.data.target = TargetHttpsProxy.resource.data.selfLink and DATE(TargetHttpsProxy.readTime) = DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY))
+JOIN `$project.$dataset.resource_compute_googleapis_com_UrlMap` UrlMap ON (TargetHttpsProxy.resource.data.urlMap = UrlMap.resource.data.selfLink and DATE(UrlMap.readTime) = DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY))
+CROSS JOIN UNNEST(UrlMap.resource.data.pathMatchers) as UrlMapPathMatchers
+CROSS JOIN UNNEST(UrlMapPathMatchers.pathRules) as UrlMapPathMatchersRules
+CROSS JOIN UNNEST(UrlMap.resource.data.hostRules) as UrlMapHostRules
+JOIN `$project.$dataset.resource_compute_googleapis_com_BackendService` BackendService ON (UrlMapPathMatchersRules.service = BackendService.resource.data.selfLink and DATE(BackendService.readTime) = DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY))
+CROSS JOIN UNNEST(BackendService.resource.data.backends) as Backend
+JOIN `$project.$dataset.resource_compute_googleapis_com_InstanceGroup` InstanceGroup ON (Backend.group = InstanceGroup.resource.data.selfLink and DATE(InstanceGroup.readTime) = DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY))
+
+WHERE DATE(GlobalForwardingRule.readTime) = DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY)

@@ -1,0 +1,11 @@
+SELECT  
+resource.data.tableReference.tableId as bqTableName,
+name as bqTablePath,
+resource.parent as bqDatasetPath,
+resource.data.tableReference.projectId as projectName,
+resource.data.tableReference.datasetId as bqDatasetName,
+resource.location as bqTableLocation,
+updateTime as bqTableUpdateTime,
+FROM `$project.$dataset.resource_bigquery_googleapis_com_Table` 
+WHERE DATE(readTime) = DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY)
+-- authors: rheins@nuro.ai

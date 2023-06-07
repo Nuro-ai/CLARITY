@@ -1,0 +1,22 @@
+SELECT 
+resource.data.name as instanceName, 
+instance.name as instancePath, 
+SPLIT(instance.name, '/')[OFFSET(4)] as projectName,
+billing.cost_after_credits as billingLastMonthCostAfterCredits,
+billing.cost_before_credits as billingLastMonthCostBeforeCredits,
+resource.data.labels[SAFE_OFFSET(0)].key as instanceGKETag, 
+resource.data.labels[SAFE_OFFSET(0)].value as instanceManagedBy, 
+SPLIT(resource.data.machineType, '/')[OFFSET(10)] as instanceMachineType, 
+resource.data.status as instanceStatus, 
+resource.location as instanceLocation, 
+resource.data.networkInterfaces[SAFE_OFFSET(0)].networkIP as instanceIPAddr, 
+resource.data.networkInterfaces[SAFE_OFFSET(0)].network as networkSelfLink, 
+resource.data.networkInterfaces[SAFE_OFFSET(0)].subnetwork as subnetSelfLink, 
+resource.data.serviceAccounts[SAFE_OFFSET(0)].email as instanceServiceAccount, 
+resource.data.disks[SAFE_OFFSET(0)].diskSizeGb as instanceDiskCapacity,
+resource.data.disks[SAFE_OFFSET(0)].licenses[SAFE_OFFSET(0)] as instanceLicense,
+resource.data.creationTimestamp as instanceCreationTimestamp,
+FROM `$project.$dataset.resource_compute_googleapis_com_Instance` instance
+LEFT JOIN `$project.$dataset.dev_snapshot_resource_billing` billing ON (billing.resourcePath = instance.name and billing.month = FORMAT_DATE('%G%m', DATE_SUB(current_date(), INTERVAL 1 MONTH))) 
+WHERE DATE(readTime) = DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY)
+-- authors: rheins@nuro.ai

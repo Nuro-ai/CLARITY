@@ -1,0 +1,29 @@
+SELECT 
+JSON_EXTRACT(subjects, "$.name") as subject_name,
+JSON_EXTRACT(subjects, "$.namespace") as subject_namespace,
+JSON_EXTRACT(subjects, "$.kind") as subject_kind,
+JSON_EXTRACT(subjects, "$.apiGroup") as subject_apigroup,
+JSON_EXTRACT(managedFields, "$.apiVersion") as managedFields_apiVersion,
+JSON_EXTRACT(managedFields, "$.fieldsType") as managedFields_fieldsType,
+JSON_EXTRACT(managedFields, "$.manager") as managedFields_manager,
+JSON_EXTRACT(managedFields, "$.operation") as managedFields_operation,
+JSON_EXTRACT(managedFields, "$.time") as managedFields_time,
+JSON_EXTRACT(resource.data, "$.roleRef.name") as roleref_name,
+JSON_EXTRACT(resource.data, "$.roleRef.kind") as roleref_kind,
+JSON_EXTRACT(resource.data, "$.roleRef.apiGroup") as roleref_apiGroup,
+JSON_EXTRACT(resource.data, "$.metadata.namespace") as namespace,
+JSON_EXTRACT(resource.data, "$.metadata.labels") as metadata_labels,
+JSON_EXTRACT(resource.data, "$.metadata.clusterName") as metadata_cluster_name,
+JSON_EXTRACT(resource.data, "$.metadata.creationTimestamp") as metadata_creation_timestamp,
+JSON_EXTRACT(resource.data, "$.metadata.annotations") as metadata_annotations,
+readTime,
+
+FROM 
+`$project.$dataset.resource`, 
+UNNEST(JSON_EXTRACT_ARRAY(resource.data, "$.subjects")) as subjects,
+UNNEST(JSON_EXTRACT_ARRAY(resource.data, "$.metadata.managedFields")) as managedFields
+WHERE DATE(readTime) = DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY)
+AND asset_type = "rbac.authorization.k8s.io/ClusterRoleBinding"
+LIMIT 100
+
+-- author: jezhang@nuro.ai

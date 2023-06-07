@@ -1,0 +1,14 @@
+SELECT 
+
+ig.resource.data.name as instancegroupName,
+ig.name as instancegroupPath, 
+ig.resource.parent as instancegroupParent,
+ig.resource.data.description as instancegroupDescription,
+ig.resource.data.network as instancegroupNetworkURL,
+ig.resource.data.subnetwork as instancegroupSubnetURL,
+ig.resource.location as instancegroupLocation,
+project.projectName
+FROM `$project.$dataset.resource_compute_googleapis_com_InstanceGroup` ig
+JOIN `$project.$dataset.view_project` project ON project.projectParent = ig.resource.parent 
+WHERE DATE(readTime) = DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY)
+-- authors: rheins@nuro.ai

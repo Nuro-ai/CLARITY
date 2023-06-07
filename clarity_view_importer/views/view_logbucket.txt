@@ -1,0 +1,25 @@
+-- This is needed because it's not posssible to natively join Log Sinks and Log Buckets 
+-- because log sinks use the convention: logging.googleapis.com/projects/{$project_name}/
+-- and log buckets use the convention: //logging.googleapis.com/projects/{$project_number}/
+-- so this normalizes it to the log sink syntax
+
+SELECT 
+REPLACE(logBucketName, projectNumber, projectName) as logBucketLink,
+logBucket.resource.data.description as logBucketDescription, 
+logBucket.resource.data.retentionDays as logBucketRetentionDays,
+projectName as logBucketProject
+
+FROM (
+  SELECT 
+  SPLIT(logBucket.name, '/')[OFFSET(4)] as projectNumber,
+  project.projectName as projectName,
+  REPLACE(logBucket.name, "//", "") as logBucketName,
+  logBucket.* 
+
+  FROM `$project.$dataset.resource_logging_googleapis_com_LogBucket` logBucket
+  LEFT JOIN `$project.$dataset.view_project` project 
+  ON (
+    project.projectParent = logBucket.resource.parent)
+  ) as logBucket
+  WHERE DATE(logBucket.readTime) = DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY)
+-- authors: rheins@nuro.ai

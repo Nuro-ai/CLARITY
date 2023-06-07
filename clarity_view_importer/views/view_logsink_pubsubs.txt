@@ -1,0 +1,27 @@
+SELECT
+logSink.name as logSinkPath,
+logSink.resource.data.name as logSinkName,
+logSink.resource.data.destination as logSinkDestination,
+logSink.resource.data.filter as logSinkFilter,
+logSink.resource.data.writerIdentity as logSinkWriterIdentity,
+pubsubTopic.resource.parent as pubsubTopicParent,
+pubsubTopic.resource.data.name as pubsubTopicName,
+pubsubSubscription.resource.data.name as pubsubSubscriptionName,
+pubsubSubscription.resource.data.pushConfig.
+pushEndpoint as pubsubSubscriptionPushEndpoint,
+IFNULL(project.projectName, "Org Sink") as logSinkProjectName,
+
+FROM `$project.$dataset.resource_logging_googleapis_com_LogSink` logSink
+LEFT JOIN `$project.$dataset.view_project` project ON project.projectParent = logSink.resource.parent
+
+JOIN 
+(
+  SELECT SUBSTR(name, 3) as topicNameShort, * 
+  FROM `$project.$dataset.resource_pubsub_googleapis_com_Topic`
+  WHERE DATE(readTime) = DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY)
+) pubsubTopic ON pubsubTopic.topicNameShort = logSink.resource.data.destination 
+LEFT JOIN `$project.$dataset.resource_pubsub_googleapis_com_Subscription` pubsubSubscription
+ON (pubsubSubscription.resource.data.topic = pubsubTopic.resource.data.name AND DATE(pubsubSubscription.readTime) = DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY)
+) 
+WHERE DATE(logSink.readTime) = DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY)
+-- authors: rheins@nuro.ai

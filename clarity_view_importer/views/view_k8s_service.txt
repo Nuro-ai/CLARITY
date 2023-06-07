@@ -1,0 +1,38 @@
+-- selected fields for asset_type=k8s.io/Service
+-- per-asset-export does not yet support most k8s resources including k8s.io/Service, so we extract it from "resource" table.
+
+SELECT 
+JSON_EXTRACT(managedFields, "$.apiVersion") as managedFields_apiVersion,
+JSON_EXTRACT(managedFields, "$.fieldsType") as managedFields_fieldsType,
+JSON_EXTRACT(managedFields, "$.manager") as managedFields_manager,
+JSON_EXTRACT(managedFields, "$.operation") as managedFields_operation,
+JSON_EXTRACT(managedFields, "$.time") as managedFields_time,
+JSON_EXTRACT(resource.data, "$.metadata.namespace") as namespace,
+JSON_EXTRACT(resource.data, "$.metadata.labels") labels,
+JSON_EXTRACT(resource.data, "$.metadata.clusterName") as metadata_cluster_name,
+JSON_EXTRACT(resource.data, "$.metadata.creationTimestamp") as metadata_creation_timestamp,
+JSON_EXTRACT(resource.data, "$.metadata.annotations") as metadata_annotations,
+
+JSON_EXTRACT(resource.data, "$.spec.clusterIP") as clusterIP,
+JSON_EXTRACT(resource.data, "$.spec.externalName") as externalName,
+JSON_EXTRACT(resource.data, "$.spec.externalTrafficPolicy") as externalTrafficPolicy,
+JSON_EXTRACT(resource.data, "$.spec.healthCheckNodePort") as healthCheckNodePort,
+JSON_EXTRACT(resource.data, "$.spec.loadBalancerIP") as loadBalancerIP,
+
+JSON_EXTRACT(ports, "$.name") as port_name,
+JSON_EXTRACT(ports, "$.nodePort") as nodePort,
+JSON_EXTRACT(ports, "$.port") as port,
+JSON_EXTRACT(ports, "$.protocol") as protocol,
+JSON_EXTRACT(ports, "$.targetPort") as targetPort,
+
+readTime,
+
+FROM 
+`$project.$dataset.resource`, 
+UNNEST(JSON_EXTRACT_ARRAY(resource.data, "$.spec.ports")) as ports,
+UNNEST(JSON_EXTRACT_ARRAY(resource.data, "$.metadata.managedFields")) as managedFields
+WHERE DATE(readTime) = DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY)
+AND asset_type = "k8s.io/Service"
+LIMIT 100
+
+-- author: jezhang@nuro.ai

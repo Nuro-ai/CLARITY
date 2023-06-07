@@ -1,0 +1,16 @@
+SELECT 
+resource.data.name as clusterName, 
+name as clusterPath,
+resource.location as clusterLocation, 
+resource.data.endpoint as clusterEndpoint,
+resource.data.workloadIdentityConfig as clusterWorkload,
+resource.data.nodeConfig.workloadMetadataConfig.mode as clusterWorkloadMode,
+resource.data.clusterIpv4Cidr as clusterCIDR,
+resource.data.masterAuthorizedNetworksConfig.cidrBlocks as authorizedNetworks,
+SPLIT(name, '/')[OFFSET(4)] as projectName, 
+resource.data.currentMasterVersion as clusterMasterVersion,
+resource.data.currentNodeVersion as clusterNodeVersion,
+resource.data.workloadIdentityConfig.workloadPool as clusterWorkloadIdentity,
+FROM `$project.$dataset.resource_container_googleapis_com_Cluster`
+WHERE DATE(readTime) = DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY)
+-- authors: kbroughton@nuro.ai

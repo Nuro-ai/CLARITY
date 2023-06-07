@@ -1,0 +1,20 @@
+SELECT 
+project.projectName as projectName,
+--billing.cost_after_credits as billingCost,
+(SELECT count(*) FROM $project.$dataset.view_instance instance WHERE instance.projectName = project.projectName) as instances,
+(SELECT COUNT(DISTINCT(name)) FROM $project.$dataset.resource_compute_googleapis_com_Network network WHERE network.resource.parent = project.projectParent) as vpcs,
+(SELECT COUNT(DISTINCT(subnet.name)) FROM $project.$dataset.resource_compute_googleapis_com_Subnetwork subnet LEFT JOIN $project.$dataset.resource_compute_googleapis_com_Network network ON (DATE(network.readTime) = DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY) and subnet.resource.data.network = network.resource.data.selfLink) WHERE network.resource.parent = project.projectParent) as subnets,
+(SELECT COUNT(DISTINCT(address)) FROM $project.$dataset.view_external_ip externalIP WHERE externalIP.projectName = project.projectName) as externalIPs,
+(SELECT count(*) FROM $project.$dataset.view_cluster cluster WHERE cluster.projectName = project.projectName) as clusters,
+(SELECT count(*) FROM $project.$dataset.view_cloudsql cloudsql WHERE cloudsql.projectName = project.projectParent) as cloudSQLs,
+(SELECT IFNULL(SUM(bqTableCount), 0) FROM $project.$dataset.view_bqdataset bqDataset WHERE bqDataset.projectName = project.projectName) as BigQueryTables,
+(SELECT count(*) FROM $project.$dataset.view_bucket bucket WHERE bucket.bucketParent = project.projectParent ) as GCSBuckets,
+(SELECT count(*) FROM $project.$dataset.view_redis redis WHERE redis.redisParent = project.projectParent) as redis,
+
+project.projectParent as projectParentId, project.projectCreateTime as projectCreationTimestamp, project.projectUpdateTime as projectUpdateTime
+
+FROM `$project.$dataset.view_project` project
+LEFT JOIN `$project.$dataset.view_project_billing_last_month` billing ON (billing.project = project.projectName) 
+
+-- authors: rheins@nuro.ai
+

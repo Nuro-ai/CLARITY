@@ -1,0 +1,48 @@
+-- selected fields for asset_type=k8s.io/Pods
+-- per-asset-export does not yet support most k8s resources including k8s.io/Pods, so we extract it from "resource" table.
+
+SELECT 
+JSON_EXTRACT_SCALAR(resource.data, "$.spec.nodeName") AS nodeName,
+SPLIT(name, '/')[OFFSET(8)] as clusterName,
+SPLIT(name, '/')[OFFSET(4)] as projectName,
+JSON_EXTRACT_SCALAR(pod_containers, "$.image") as podImage,
+name as podPath, 
+node.clusterPath,
+node.clusterLocation,
+node.nodePath,
+JSON_EXTRACT_SCALAR(init_containers, "$.image") as initImage,
+ARRAY_LENGTH(JSON_EXTRACT_ARRAY(resource.data, "$.spec.containers")) AS podContainerCount,
+JSON_EXTRACT_SCALAR(resource.data, "$.status.hostIP") as hostIP,
+JSON_EXTRACT_SCALAR(resource.data, "$.status.message") as statusMessage,
+JSON_EXTRACT_SCALAR(resource.data, "$.status.podIP") as podIP,
+JSON_EXTRACT_SCALAR(resource.data, "$.status.podIPs") as podIPs,
+JSON_EXTRACT_SCALAR(resource.data, "$.status.phase") AS podPhase,
+JSON_EXTRACT_SCALAR(resource.data, "$.status.reason") as podStatusReason,
+JSON_EXTRACT_SCALAR(resource.data, "$.status.startTime") as podStartTime,
+JSON_EXTRACT_SCALAR(resource.data, "$.spec.volumes") as podVolumes,
+JSON_EXTRACT_SCALAR(resource.data, "$.spec.restartPolicy") as podRestartPolicy,
+JSON_EXTRACT_SCALAR(resource.data, "$.spec.schedulerName") as podSchedulerName,
+JSON_EXTRACT_SCALAR(resource.data, "$.spec.securityContext") as podSecurityContext,
+JSON_EXTRACT_SCALAR(resource.data, "$.spec.serviceAccount") as podSA,
+JSON_EXTRACT_SCALAR(resource.data, "$.spec.serviceAccountName") as podSAName,
+JSON_EXTRACT_SCALAR(resource.data, "$.spec.subdomain") as podSubdomain,
+JSON_EXTRACT_SCALAR(resource.data, "$.spec.nodeName") as podNodeName,
+JSON_EXTRACT_SCALAR(resource.data, "$.spec.dnsPolicy") as podDNSPolicy,
+JSON_EXTRACT_SCALAR(resource.data, "$.spec.hostNetwork") as podHostNetwork,
+JSON_EXTRACT_SCALAR(resource.data, "$.metadata.namespace") as podNamespace,
+JSON_EXTRACT_SCALAR(resource.data, "$.metadata.labels") as podMetadataLabels,
+JSON_EXTRACT_SCALAR(resource.data, "$.metadata.clusterName") as podClusterName,
+JSON_EXTRACT_SCALAR(resource.data, "$.metadata.creationTimestamp") as podCreationTime,
+JSON_EXTRACT_SCALAR(resource.data, "$.metadata.annotations") as podAnnotations,
+JSON_EXTRACT_SCALAR(resource.data, "$.metadata.annotations['components.gke.io/component-name']") AS podComponentName,
+JSON_EXTRACT_SCALAR(resource.data, "$.metadata.annotations['components.gke.io/component-version']") AS podComponentVersion,
+readTime,
+
+FROM `$project.$dataset.resource`, 
+UNNEST(JSON_EXTRACT_ARRAY(resource.data, "$.spec.containers")) as pod_containers,
+UNNEST(JSON_EXTRACT_ARRAY(resource.data, "$.spec.initContainers")) as init_containers
+LEFT JOIN `$project.$dataset.view_node` node ON (node.projectName = SPLIT(name, '/')[OFFSET(4)] AND node.nodeHostname = JSON_EXTRACT_SCALAR(resource.data, "$.spec.nodeName")) 
+WHERE DATE(readTime) = DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY)
+AND asset_type = "k8s.io/Pod"
+
+-- author: kbroughton@nuro.ai, rheins@nuro.ai

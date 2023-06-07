@@ -1,0 +1,18 @@
+SELECT 
+resource.data.name as sqlName, 
+resource.data.project as projectName, 
+resource.parent as projectParent,
+resource.data.databaseVersion as sqlDBVersion, 
+resource.data.settings.tier as sqlTier, 
+resource.data.instanceType as sqlInstanceType, 
+resource.data.serviceAccountEmailAddress as serviceAccount,  
+resource.data.onPremisesConfiguration.
+hostPort as sqlHostPort,  
+resource.data.region as sqlRegion, 
+resource.data.
+createTime as sqlCreateTime,
+name as sqlPath,
+FROM `$project.$dataset.resource_sqladmin_googleapis_com_Instance` cloudsql
+JOIN `$project.$dataset.view_project` project ON project.projectParent = cloudsql.resource.parent
+WHERE DATE(readTime) = DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY)
+-- authors: rheins@nuro.ai

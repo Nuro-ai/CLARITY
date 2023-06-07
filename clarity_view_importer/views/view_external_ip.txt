@@ -1,0 +1,52 @@
+SELECT
+address, name, type, project.projectName as projectName, path 
+FROM
+(
+  SELECT 
+  resource.data.address as address,
+  resource.data.name as name,
+  resource.discoveryName as type,
+  name as path,
+  resource.parent as parent,
+  FROM `$project.$dataset.resource_compute_googleapis_com_Address`
+  WHERE DATE(readTime) = DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY)
+
+  UNION ALL
+
+  SELECT 
+  resource.data.IPaddress as address,
+  resource.data.name as name,
+  resource.discoveryName as type,
+  name as path,
+  resource.parent as parent,
+  FROM `$project.$dataset.resource_compute_googleapis_com_GlobalForwardingRule` 
+  WHERE DATE(readTime) = DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY)
+
+  UNION ALL
+
+  SELECT 
+  ips.ipAddress as address,
+  sqladmin.resource.data.name as name,
+  sqladmin.resource.discoveryName as type,
+  sqladmin.name as path,
+  resource.parent as parent,
+  FROM `$project.$dataset.resource_sqladmin_googleapis_com_Instance` as sqladmin
+  CROSS JOIN UNNEST(sqladmin.resource.data.ipAddresses) as ips
+  WHERE DATE(readTime) = DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY)
+
+  UNION ALL
+
+  SELECT 
+  interfaces.ipAddress as address,
+  vpn.resource.data.name as name,
+  vpn.resource.discoveryName as type,
+  vpn.name as path,
+  resource.parent as parent,
+  FROM `$project.$dataset.resource_compute_googleapis_com_VpnGateway` as vpn
+  CROSS JOIN UNNEST(vpn.resource.data.vpnInterface) as interfaces
+  WHERE DATE(readTime) = DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY)
+)
+JOIN `$project.$dataset.view_project` project ON parent = project.projectParent
+WHERE NOT (starts_with(address, "10.") OR starts_with(address, "0.") OR starts_with(address, "100."))
+ORDER BY address ASC
+-- author rheins@nuro.ai

@@ -1,0 +1,17 @@
+SELECT
+logSink.name as logSinkPath,
+logSink.resource.data.name as logSinkName,
+logSink.resource.data.destination as logSinkDestination,
+logSink.resource.data.filter as logSinkFilter,
+logSink.resource.data.writerIdentity as logSinkWriterIdentity,
+logBucket.logBucketLink, 
+logBucket.logBucketDescription, 
+logBucket.logBucketRetentionDays, 
+logBucket.logBucketProject,
+IFNULL(project.projectName, "Org Sink") as logSinkProjectName,
+FROM `$project.$dataset.resource_logging_googleapis_com_LogSink` logSink
+JOIN `$project.$dataset.view_logbucket` logBucket ON(logSink.resource.data.destination = logBucket.logBucketLink)
+LEFT JOIN `$project.$dataset.view_project` project ON (project.projectParent = logSink.resource.parent)
+WHERE DATE(logSink.readTime) = DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY)
+GROUP BY logSink.name, logSink.resource.data.name, logSink.resource.data.destination,logSink.resource.data.filter,logSink.resource.data.writerIdentity,project.projectName, logBucket.logBucketLink, logBucket.logBucketDescription, logBucket.logBucketRetentionDays, logBucket.logBucketProject
+-- authors: rheins@nuro.ai

@@ -1,0 +1,21 @@
+SELECT 
+nodepool.name as nodepoolPath,
+nodepool.resource.parent as nodepoolParent,
+nodepool.resource.data.name as nodepoolName,
+nodepool.resource.data.config.machineType as nodepoolMachineType,
+nodepool.resource.data.config.diskSizeGb as nodepoolDiskSizeGb,
+nodepool.resource.data.config.serviceAccount as nodepoolSA,
+nodepool.resource.data.config.imageType as nodepoolImageType,
+nodepool.resource.data.networkConfig.podIpv4CidrBlock as nodepoolCIDR,
+nodepool.resource.data.status as nodepoolStatus,
+nodepool.resource.data.autoscaling.enabled as nodepoolAutoscalingEnable,
+nodepool.resource.data.autoscaling.minNodeCount as nodepoolMinNodecount,
+nodepool.resource.data.autoscaling.maxNodeCount as nodepoolMaxNodecount,
+nodepool.resource.data.maxPodsConstraint.maxPodsPerNode as nodepoolMaxNodesPerPod,
+nodepool.resource.location as nodepoolLocation,
+nodepool.updateTime as nodepoolUpdateTime,
+cluster.*
+FROM `$project.$dataset.resource_container_googleapis_com_NodePool` nodepool
+JOIN `$project.$dataset.view_cluster` cluster ON (nodepool.resource.parent = cluster.clusterPath)
+WHERE DATE(readTime) = DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY)
+-- authors: rheins@nuro.ai

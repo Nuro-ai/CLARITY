@@ -1,0 +1,28 @@
+SELECT 
+project.projectName as projectName, 
+project.projectCreateTime as projectCreationTimestamp, 
+project.projectUpdateTime as projectUpdateTime, 
+project.projectXPNStatus as projectXpnProjectStatus,
+network.name as networkPath, 
+network.assetType as networkAssetType, 
+network.resource.data.name as networkName, 
+network.resource.data.description as networkDescription, 
+network.resource.data.selfLink as networkSelfLink,
+subnet.resource.data.name as subnetName, 
+subnet.resource.data.id as subnetId,
+subnet.resource.data.ipCidrRange AS subnetIPCidrRange, 
+subnet.resource.data.gatewayAddress AS subnetGatewayAddress, 
+subnet.resource.location AS subnetLocation, 
+subnet.resource.data.logConfig.enable as subnetVPCFlowLogEnable,
+subnet.resource.data.selfLink as subnetSelfLink,
+firewall.resource.data.logConfig.enable as firewallDefaultDenyLogging,
+(SELECT COUNT(*) FROM $project.$dataset.view_instance WHERE view_instance.networkSelfLink = network.resource.data.selfLink) as vpcInstanceCount,
+(SELECT COUNT(*) FROM $project.$dataset.view_instance WHERE view_instance.subnetSelfLink = subnet.resource.data.selfLink) as subnetInstanceCount
+
+FROM `$project.$dataset.resource_compute_googleapis_com_Network` network 
+JOIN `$project.$dataset.view_project` project ON project.projectParent = network.resource.parent
+LEFT JOIN `$project.$dataset.resource_compute_googleapis_com_Subnetwork` subnet ON (subnet.resource.data.network = network.resource.data.selfLink AND  DATE(subnet.readTime) = DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY))
+LEFT JOIN $project.$dataset.resource_compute_googleapis_com_Firewall firewall ON (DATE(firewall.readTime) = DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY) and firewall.resource.data.network = network.resource.data.selfLink and firewall.resource.data.direction = "INGRESS" and firewall.resource.data.sourceRanges[SAFE_OFFSET(0)] = "0.0.0.0/0" and firewall.resource.data.denied[SAFE_OFFSET(0)].IPProtocol = "all" and firewall.resource.data.logConfig.enable = true and network.resource.parent = project.projectParent)
+WHERE DATE(network.readTime) = DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY)
+-- authors: rheins@nuro.ai
+

@@ -1,0 +1,42 @@
+SELECT 
+JSON_EXTRACT_SCALAR(resource.data, "$.metadata.name") as pod_name,
+JSON_EXTRACT_SCALAR(resource.data, "$.status.hostIP") as host_ip,
+SPLIT(name, '/')[SAFE_OFFSET(4)] as project_name,
+SPLIT(resource.parent, '/')[SAFE_OFFSET(8)] as cluster_name,
+JSON_EXTRACT_SCALAR(pod_containers, "$.image") as pod_image,
+JSON_EXTRACT_SCALAR(init_containers, "$.image") as init_image,
+JSON_EXTRACT_SCALAR(resource.data, "$.spec.nodeName") as node_name,
+JSON_EXTRACT_SCALAR(resource.data, "$.status.message") as status_message,
+name as pod_path,
+JSON_EXTRACT_SCALAR(resource.data, "$.status.podIP") as pod_ip,
+JSON_EXTRACT_SCALAR(resource.data, "$.status.podIPs") as pod_ips,
+JSON_EXTRACT_SCALAR(resource.data, "$.status.reason") as status_reason,
+JSON_EXTRACT_SCALAR(resource.data, "$.status.startTime") as start_time,
+JSON_EXTRACT_SCALAR(resource.data, "$.spec.volumes") as spec_volumes,
+JSON_EXTRACT_SCALAR(resource.data, "$.spec.restartPolicy") as spec_restart_policy,
+JSON_EXTRACT_SCALAR(resource.data, "$.spec.schedulerName") as spec_scheduler,
+JSON_EXTRACT_SCALAR(resource.data, "$.spec.securityContext") as spec_security_context,
+JSON_EXTRACT_SCALAR(resource.data, "$.spec.serviceAccount") as spec_service_account,
+JSON_EXTRACT_SCALAR(resource.data, "$.spec.serviceAccountName") as spec_service_account_name,
+JSON_EXTRACT_SCALAR(resource.data, "$.spec.subdomain") as spec_domain,
+JSON_EXTRACT_SCALAR(resource.data, "$.spec.nodeName") as spec_node_name,
+JSON_EXTRACT_SCALAR(resource.data, "$.spec.dnsPolicy") as spec_dns_policy,
+JSON_EXTRACT_SCALAR(resource.data, "$.spec.hostNetwork") as spec_host_network,
+JSON_EXTRACT_SCALAR(resource.data, "$.spec.subdomain") as spec_subdomain,
+JSON_EXTRACT_SCALAR(resource.data, "$.metadata.namespace") as namespace,
+JSON_EXTRACT_SCALAR(resource.data, "$.metadata.labels") as metadata_labels,
+--JSON_EXTRACT_SCALAR(resource.data, "$.metadata.clusterName") as cluster_name,
+JSON_EXTRACT_SCALAR(resource.data, "$.metadata.creationTimestamp") as metadata_creation_timestamp,
+JSON_EXTRACT_SCALAR(resource.data, "$.metadata.annotations") as metadata_annotations,
+cluster.*,
+readTime,
+
+FROM 
+`$project.$dataset.resource`
+LEFT JOIN UNNEST(JSON_EXTRACT_ARRAY(resource.data, "$.spec.containers")) as pod_containers
+LEFT JOIN UNNEST(JSON_EXTRACT_ARRAY(resource.data, "$.spec.initContainers")) as init_containers
+LEFT JOIN `$project.$dataset.view_cluster` cluster ON (cluster.clusterName = SPLIT(resource.parent, '/')[SAFE_OFFSET(8)] AND cluster.projectName = SPLIT(name, '/')[SAFE_OFFSET(4)])
+WHERE DATE(readTime) = DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY)
+AND asset_type = "k8s.io/Pod"
+
+-- author: kbroughton@nuro.ai, rheins@nuro.ai

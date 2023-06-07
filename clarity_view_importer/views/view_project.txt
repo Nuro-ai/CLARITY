@@ -1,0 +1,13 @@
+SELECT 
+resource.data.name as projectName,
+SPLIT(resource.parent, '/')[SAFE_OFFSET(ARRAY_LENGTH(SPLIT(resource.parent, '/')) -1)] as projectNumber,
+name as projectPath, 
+resource.parent as projectParent,
+resource.data.defaultServiceAccount as projectDefaultSA,
+resource.data.selfLink as projectSelfLink,
+resource.data.xpnProjectStatus as projectXPNStatus,
+updateTime as projectUpdateTime, 
+resource.data.creationTimestamp as projectCreateTime, 
+FROM `$project.$dataset.resource_compute_googleapis_com_Project` 
+WHERE DATE(readTime) = DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY)
+-- authors: rheins@nuro.ai, kbroughton@nuro.ai

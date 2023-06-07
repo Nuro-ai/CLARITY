@@ -1,0 +1,23 @@
+SELECT 
+redis.name as redisPath,
+SPLIT(redis.name, '/')[OFFSET(8)] as redisName,  
+--redis.resource.data.name as redisName,
+project.projectName,
+redis.resource.data.displayName as redisDisplayName,
+redis.resource.parent as redisParent,
+redis.resource.data.host as redisIP,
+redis.resource.data.port as redisPort,
+redis.resource.data.memorySizeGb as redisMemorySizeGB,
+redis.resource.data.redisVersion as redisVersion,
+redis.resource.data.authorizedNetwork as redisAuthorizedNetwork,
+redis.resource.data.authEnabled as redisAuthEnabled,
+redis.resource.data.transitEncryptionMode as redisEncryptionMode,
+redis.resource.data.connectMode as redisConnectMode,
+redis.resource.data.persistenceIamIdentity as redisPersistanceIAMId,
+redis.resource.location as redisLocation,
+redis.resource.data.reservedIpRange as redisIPRange,
+redis.resource.data.createTime as redisCreateTime
+FROM `$project.$dataset.resource_redis_googleapis_com_Instance` redis 
+LEFT JOIN `$project.$dataset.view_project` project ON (project.projectParent = redis.resource.parent)
+WHERE DATE(redis.readTime) = DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY)
+-- Authors: rheins@nuro.ai

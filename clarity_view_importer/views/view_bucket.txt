@@ -1,0 +1,23 @@
+SELECT 
+bucket.name as bucketPath, 
+bucket.resource.data.kind as bucketKind, 
+bucket.resource.data.name as bucketName, 
+--billing.cost_after_credits as billingLastMonthCostAfterCredits,
+--billing.cost_before_credits as billingLastMonthCostBeforeCredits,
+bucket.resource.parent as bucketParent, 
+bucket.resource.data.timeCreated as bucketCreation, 
+bucket.resource.data.updated as bucketUpdated, 
+bucket.resource.data.location as bucketLocation, 
+bucket.resource.data.versioning.enabled as bucketVersioning, 
+bucket.resource.data.iamConfiguration.publicAccessPrevention as bucketPublicAccessPrevention, 
+bucket.resource.data.iamConfiguration.bucketPolicyOnly.enabled as bucketIAMPolicy, 
+bucket.resource.data.iamConfiguration.uniformBucketLevelAccess.enabled as bucketUniformAcess, 
+bucket.resource.data.locationType as bucketLocationType, 
+bucket.resource.data.directory.enabled as bucketDirectoryEnabled, 
+project.projectName as projectName
+FROM `$project.$dataset.resource_storage_googleapis_com_Bucket` bucket 
+JOIN `$project.$dataset.view_project` project ON bucket.resource.parent = project.projectParent
+--LEFT JOIN `$project.$dataset.billing_snapshot` billing ON (billing.service = 'Cloud Storage' AND billing.resourceName = bucket.resource.data.name AND billing.month = FORMAT_DATE('%G%m', DATE_SUB(current_date(), INTERVAL 1 MONTH))) 
+
+WHERE DATE(bucket.readTime) = DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY)
+-- authors: rheins@nuro.ai

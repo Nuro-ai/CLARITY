@@ -1,0 +1,28 @@
+SELECT 
+JSON_EXTRACT(rules, "$.apiGroups") as rules_apiGroups,
+JSON_EXTRACT(rules, "$.resources") as rules_resources,
+JSON_EXTRACT(rules, "$.verbs") as rules_verbs,
+JSON_EXTRACT(rules, "$.resourceNames") as resource_names,
+JSON_EXTRACT(resource.data, "$.roleRef.name") as roleref_name,
+JSON_EXTRACT(resource.data, "$.roleRef.kind") as roleref_kind,
+JSON_EXTRACT(resource.data, "$.roleRef.apiGroup") as roleref_apiGroup,
+JSON_EXTRACT(resource.data, "$.metadata.namespace") as namespace,
+JSON_EXTRACT(resource.data, "$.metadata.generationName") as generationName,
+JSON_EXTRACT(resource.data, "$.metadata.generation") as generation,
+JSON_EXTRACT(resource.data, "$.metadata.labels.app") as metadata_labels_app,
+JSON_EXTRACT(resource.data, "$.metadata.labels.chart") as metadata_labels_chart,
+JSON_EXTRACT(resource.data, "$.metadata.labels.heritage") as metadata_labels_heritage,
+JSON_EXTRACT(resource.data, "$.metadata.labels.release") as metadata_labels_release,
+JSON_EXTRACT(resource.data, "$.metadata.clusterName") as metadata_cluster_name,
+JSON_EXTRACT(resource.data, "$.metadata.creationTimestamp") as metadata_creation_timestamp,
+JSON_EXTRACT(resource.data, "$.metadata.annotations") as metadata_annotations,
+readTime,
+
+FROM 
+`$project.$dataset.resource`, 
+UNNEST(JSON_EXTRACT_ARRAY(resource.data, "$.rules")) as rules
+WHERE DATE(readTime) = DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY)
+AND asset_type = "rbac.authorization.k8s.io/Role"
+LIMIT 100
+
+-- author: jezhang@nuro.ai

@@ -1,0 +1,8 @@
+SELECT name as iamResourcePath, account, bindings.role as iamRole, asset_type as assetType
+FROM `$project.$dataset.iam-policy` policy,
+UNNEST(policy.iam_policy.bindings) bindings,
+UNNEST(bindings.members) account
+WHERE 
+DATE(readTime) = DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY)
+-- authors: rheins@nuro.ai
+

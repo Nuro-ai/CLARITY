@@ -1,0 +1,24 @@
+SELECT 
+
+SPLIT(name, '/')[OFFSET(8)] as clusterName,
+JSON_EXTRACT_SCALAR(resource.data, "$.metadata.labels['kubernetes.io/hostname']") AS nodeHostname,
+JSON_EXTRACT_SCALAR(resource.data, '$.metadata.creationTimestamp') AS nodeCreationTimestamp,
+JSON_EXTRACT_SCALAR(resource.data, "$.metadata.annotations['container.googleapis.com/instance_id']") AS nodeInstanceID,
+JSON_EXTRACT_SCALAR(resource.data, "$.metadata.annotations['projectcalico.org/IPv4Address']") AS nodeIP,
+JSON_EXTRACT_SCALAR(resource.data, "$.metadata.labels['node.kubernetes.io/instance-type']") AS nodeInstanceType,
+JSON_EXTRACT_SCALAR(resource.data, "$.metadata.labels['kubernetes.io/os']") AS nodeOS,
+JSON_EXTRACT_SCALAR(resource.data, "$.metadata.labels['cloud.google.com/gke-nodepool']") AS nodePool,
+JSON_EXTRACT_SCALAR(resource.data, "$.metadata.labels['failure-domain.beta.kubernetes.io/zone']") AS nodeZone,
+JSON_EXTRACT_SCALAR(resource.data, "$.spec.podCIDR") AS nodePodCIDR,
+JSON_EXTRACT_SCALAR(resource.data, "$.spec.providerID") AS nodeProviderID,
+clusterPath,
+clusterLocation,
+name as nodePath, 
+SPLIT(name, '/')[OFFSET(4)] as projectName,
+
+FROM `$project.$dataset.resource` 
+LEFT JOIN `$project.$dataset.view_cluster` cluster ON (cluster.projectName = SPLIT(name, '/')[OFFSET(4)] AND cluster.clusterName = SPLIT(name, '/')[OFFSET(8)]) 
+
+WHERE DATE(readTime) = DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY)
+AND asset_type = "k8s.io/Node"
+-- author: rheins@nuro.ai

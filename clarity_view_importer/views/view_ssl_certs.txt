@@ -1,0 +1,17 @@
+SELECT 
+sslAltName,
+certs.name as sslCertPath,
+project.projectName,
+resource.data.name as sslCertName,
+resource.data.managed.domains as sslCertDomains,
+resource.data.managed.status as sslCertStatus,
+resource.data.type as sslCertType,
+resource.data.creationTimestamp,
+resource.data.expireTime as sslCertExpiration,
+resource.data.selfLink as sslCertSelfLink
+
+ FROM `$project.$dataset.resource_compute_googleapis_com_SslCertificate` certs
+ CROSS JOIN UNNEST(certs.resource.data.subjectAlternativeNames) as sslAltName
+ JOIN `$project.$dataset.view_project` project ON certs.resource.parent = project.projectParent
+ WHERE DATE(readTime) = DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY)
+

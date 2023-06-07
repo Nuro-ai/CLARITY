@@ -1,0 +1,13 @@
+-- Select just the most recent upload_time, i.e., latest container
+with latest_upload_times as (
+  select 
+  view_container.container_path,
+  max(view_container.upload_time) as latest_upload_time
+  from `$dataset.view_container` view_container 
+  GROUP BY view_container.container_path
+)
+SELECT * EXCEPT(container_path) from latest_upload_times
+JOIN $dataset.view_container as view_container
+  ON latest_upload_times.latest_upload_time = view_container.upload_time and latest_upload_times.container_path = view_container.container_path
+ORDER BY latest_upload_time ASC
+-- authors: kbroughton@nuro.ai

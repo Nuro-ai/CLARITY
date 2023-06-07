@@ -1,0 +1,11 @@
+SELECT 
+project.projectName as projectName, 
+resource.asset_type as assetType, 
+count(*) as resourceCount
+FROM `$project.$dataset.resource` resource
+JOIN `$project.$dataset.view_project` project 
+  ON project.projectParent = resource.resource.parent
+AND DATE(resource.readTime) = DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY)
+GROUP BY projectName, assetType
+ORDER BY resourceCount DESC
+-- authors: rheins@nuro.ai
