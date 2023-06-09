@@ -4,6 +4,7 @@ The **CL**oud **A**sset **R**epositry and **I**nventory **T**ool for **Y**ou (CL
 
 - **BigQuery Data Views** - a set of helpful views that make it easier to retrieve useful information from the 250+ tables created by the CAI data export process.
 - **CLARITY GUI** - a web interface for querying and pivoting among common data types.
+- **View to Snapshot** - an optional script to create static BigQuery tables for each BigQuery view definition to improve query speed and costs by precalulating the data on a regular basis.
 
 ## Getting Started
 
@@ -25,6 +26,9 @@ Adding cai_project.cai_dataset.view_bucket
 Adding cai_project.cai_dataset.view_k8s_deployments
 ...
 ````
+
+### (Optional) Create Daily Schedule to Create Snapshots from Views for Better Performance
+Follow [this guide](https://github.com/Nuro-ai/CLARITY/tree/main/view_to_snapshot)
 
 ### Install the CLARITY Web Interface
 Once the CLARITY Web Interface is available, instructions will be included here.
