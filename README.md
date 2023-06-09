@@ -29,6 +29,10 @@ Adding cai_project.cai_dataset.view_k8s_deployments
 ### Install the CLARITY Web Interface
 Once the CLARITY Web Interface is available, instructions will be included here.
 
-## License
+## Contributors
+- Kesten Broughton
+- Randy Heins
+- Jeffrey Zhang
 
+## License
 The software is provided by [Nuro](https://nuro.ai) under the Apache Software License agreement. 
