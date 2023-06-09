@@ -1,44 +1,39 @@
 # view_to_snapshot
-Script to create static BigQuery tables for each BigQuery view definition to improve query speed and costs. This is best used on data that doesn't change often. It can be used to speed up queries for Cloud Asset Inventory. It optionally stores the view definitions in a GCS bucket to assist with version control.
+Script to create static BigQuery tables for each BigQuery view definition to improve query speed and costs by precalulating the data on a regular basis. This is best used on data that doesn't change often. It optionally stores the view definitions in a GCS bucket to assist with version control.
+
+ BigQuery [materialized views](https://cloud.google.com/bigquery/docs/materialized-views-intro) serve a similar function but have [limited support](https://cloud.google.com/bigquery/docs/materialized-views-create#supported-mvs) for some SQL functions that are needed by CLARITY.
 
 ## Requirements: 
 - Python `google-cloud-bigquery` and `google-cloud-storage` modules
 - GCP account with `roles/bigquery.jobUser` and `roles/bigquery.dataEditor` predefined IAM roles to create the views.
 
 ## Usage:
+- Modify the `dataset` variable to point to the dataset where your views are stored (in the format `project.dataset`)
+- (Optionally) modify the `gcs_bucket` variable to specify a GCS bucket where view definitions will be stored for version control
+- Deploy `view_to_snapshot.py` and `requirements.txt` to a Python 3 Google Cloud Function with an entrypoint of `main()`
+- Create a pubsub topic to trigger the Cloud Function
+- Create a Cloud Scheduler job to run daily with a target of the pubsub topic and a message body with the word `all`.
+- Alternatively, the pubsub topic accepts a string with the name of a specific view to only update a single snapshot
 
 
-## Example Usage:
+
+## Benefits of Snapshots:
+Standard View Query:
 ````
-# Create views in the cai_project project and cai_dataset dataset
-./clarity_view_importer.py -p cai_project -d cai_dataset
+SELECT * FROM view_projects
 
-Adding cai_project.cai_dataset.view_nodepool
-Adding cai_project.cai_dataset.view_k8s_rbac_authorization_cluster_role
-Adding cai_project.cai_dataset.view_bucket
-Adding cai_project.cai_dataset.view_k8s_deployments
-...
+-- 
+Elapsed Time: 6 seconds
+Slot time consumed: 36 min
+Bytes Processed: 18GB
 ````
 
-## Example View:
-GCS Bucket Inventory
+Snapshot Query of the Same View:
 ````
-SELECT 
-bucket.name as bucketPath, 
-bucket.resource.data.kind as bucketKind, 
-bucket.resource.data.name as bucketName, 
-bucket.resource.parent as bucketParent, 
-bucket.resource.data.timeCreated as bucketCreation, 
-bucket.resource.data.updated as bucketUpdated, 
-bucket.resource.data.location as bucketLocation, 
-bucket.resource.data.versioning.enabled as bucketVersioning, 
-bucket.resource.data.iamConfiguration.publicAccessPrevention as bucketPublicAccessPrevention, 
-bucket.resource.data.iamConfiguration.bucketPolicyOnly.enabled as bucketIAMPolicy, 
-bucket.resource.data.iamConfiguration.uniformBucketLevelAccess.enabled as bucketUniformAcess, 
-bucket.resource.data.locationType as bucketLocationType, 
-bucket.resource.data.directory.enabled as bucketDirectoryEnabled, 
-project.projectName as projectName
-FROM `$project.$dataset.resource_storage_googleapis_com_Bucket` bucket 
-JOIN `$project.$dataset.view_project` project ON bucket.resource.parent = project.projectParent
-WHERE DATE(bucket.readTime) = DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY)
+SELECT * FROM snapshot_projects
+
+--
+Elapsed Time: < 1 second
+Slot time consumed: 236 milliseconds
+Bytes Processed: 31KB
 ````
