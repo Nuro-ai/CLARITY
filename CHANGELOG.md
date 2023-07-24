@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
  
 
+## [0.2.0] - 2023-07-24 
+### Added
+- Initial release of CLARITY web interface
+
 ## [0.1.1] - 2023-06-09 
 ### Added
 - Initial release of view_to_snapshot.py
