@@ -1,6 +1,7 @@
 # CLARITY
 A PHP web interface to query Google Cloud Platform [Cloud Asset Inventory](https://cloud.google.com/asset-inventory/docs/overview) data stored in BigQuery.
 
+![SCR-20230725-hscd-2](https://github.com/Nuro-ai/CLARITY/assets/103699918/47515bcb-8bf2-4e0a-a578-d615923a2206)
 
 ## Requirements: 
 - PHP 8 or greater
