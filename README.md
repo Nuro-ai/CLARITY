@@ -31,7 +31,11 @@ Adding cai_project.cai_dataset.view_k8s_deployments
 Follow [this guide](https://github.com/Nuro-ai/CLARITY/tree/main/view_to_snapshot)
 
 ### Install the CLARITY Web Interface
-Once the CLARITY Web Interface is available, instructions will be included here.
+- Set up a PHP 8 web server with the [CLARITY source code](https://github.com/Nuro-ai/CLARITY/tree/main/clarity_web) running in the webroot.
+- Use Composer to install cloud-bigquery library 1.23 or newer.
+- Define the 'bigquery_project' and 'bigquery_dataset' constant variables in config.php to match the values for where your Cloud Asset Inventory BigQuery export is stored.
+- Browse to web server URL to access CLARITY UI.
+
 
 ## Contributors
 - Kesten Broughton
