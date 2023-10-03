@@ -1,6 +1,6 @@
 # CLARITY
 
-The **CL**oud **A**sset **R**epositry and **I**nventory **T**ool for **Y**ou (CLARITY) is a tool to extend Google Cloud Platform's [Cloud Asset Inventory](https://cloud.google.com/asset-inventory/docs/overview) (CAI) for better usability and functionality. It consists of two components:
+The **CL**oud **A**sset **R**epository and **I**nventory **T**ool for **Y**ou (CLARITY) is a tool to extend Google Cloud Platform's [Cloud Asset Inventory](https://cloud.google.com/asset-inventory/docs/overview) (CAI) for better usability and functionality. It consists of two components:
 
 - **BigQuery Data Views** - a set of helpful views that make it easier to retrieve useful information from the 250+ tables created by the CAI data export process.
 - **CLARITY GUI** - a web interface for querying and pivoting among common data types.
